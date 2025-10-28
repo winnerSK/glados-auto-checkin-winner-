@@ -1,0 +1,43 @@
+name: GLaDOS Daily Checkin
+
+on:
+  # 每天早上 5 点 (UTC+8 的 5 点, 对应 UTC 的 21 点) 自动运行
+  schedule:
+    - cron: '0 21 * * *'
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    
+    # 设置时区为北京时间 (UTC+8)
+    env:
+      TZ: Asia/Shanghai
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Run GLaDOS Checkin Script
+        run: python glados_checkin.py
+        env:
+          # 从 GitHub Secrets 读取敏感信息
+          GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE }}
+          SMTP_AUTH_CODE: ${{ secrets.SMTP_AUTH_CODE }}
+          TO_EMAIL: ${{ secrets.TO_EMAIL }}
+
+      - name: Check log for success
+        if: always()
+        run: |
+          echo "Checkin job finished. Review the logs above."
